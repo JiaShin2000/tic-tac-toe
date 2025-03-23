@@ -16,7 +16,6 @@ const Gameboard = function () {
   const placeMarker = (index, marker) => {
     if (gameboard[index] === "") {
       gameboard[index] = marker;
-      console.log(`Marker placed at ${index}:`, gameboard);
       return true;
     }
     return false;
@@ -57,38 +56,21 @@ const createPlayer = (name, marker) => {
 //Game controller module
 function GameController(playerOne = "Player 1", playerTwo = "Player 2") {
   const board = Gameboard();
-  const player1 = createPlayer(playerOne, "X");
-  const player2 = createPlayer(playerTwo, "O");
+  const players = [
+    { name: playerOne, marker: "X" },
+    { name: playerTwo, marker: "O" },
+  ];
 
-  let activePlayer = player1;
-
-  //switch turns between players
-  const switchTurns = () => {
-    activePlayer = activePlayer === player1 ? player2 : player1;
-  };
+  let activePlayer = players[0];
 
   const getActivePlayer = () => activePlayer;
 
-  const playTurn = (index) => {
-    if (board.placeMarker(index, getActivePlayer().marker)) {
-      console.log(`Placing ${getActivePlayer()}'s marker into ${index}`);
-      const winner = board.checkWinner();
-
-      if (winner) {
-        console.log(`${winner} wins!`);
-        return;
-      }
-
-      if (board.checkTie()) {
-        console.log("It's a tie!");
-        return;
-      }
-
-      switchTurns();
-    }
+  //switch turns between players
+  const switchTurns = () => {
+    activePlayer = activePlayer === players[0] ? players[1] : players[0];
   };
 
-  return { playTurn, getActivePlayer, switchTurns, board };
+  return { getActivePlayer, switchTurns, board };
 }
 
 //render UI
@@ -100,6 +82,7 @@ const displayController = () => {
   const game = GameController();
 
   function createBoard() {
+    gameStatus.textContent = `Press to Start`;
     gameboard.innerHTML = "";
     for (let i = 0; i < 9; i++) {
       const button = document.createElement("button");
@@ -114,19 +97,19 @@ const displayController = () => {
     const index = event.target.dataset.index;
     const activePlayer = game.getActivePlayer();
     if (game.board.placeMarker(index, activePlayer.marker)) {
-      //event.target.textContent = activePlayer.marker;
       updateBoard();
       if (checkGameState()) return;
       game.switchTurns();
-      gameStatus.textContent = `${activePlayer.name}'s turn:`;
+      gameStatus.textContent = `${game.getActivePlayer().name}'s turn:`;
     }
   }
 
   function updateBoard() {
+    const board = game.board.getBoard();
     const buttons = document.querySelectorAll(".gameboard button");
 
     buttons.forEach((button, index) => {
-      button.textContent = game.board.getBoard()[index];
+      button.textContent = board[index];
     });
   }
 
@@ -153,14 +136,12 @@ const displayController = () => {
   }
 
   function disableBoard() {
-    document
-      .querySelectorAll(".gameboard button")
-      .forEach((button) => (button.disabled = true));
+    const buttons = document.querySelectorAll(".gameboard button");
+    buttons.forEach((button) => (button.disabled = true));
   }
 
   function resetGame() {
     game.board.resetBoard();
-    gameStatus.textContent = "";
     gameboard.innerHTML = "";
     resetBtn.style.display = "none";
     createBoard();
